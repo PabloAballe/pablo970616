@@ -1,0 +1,52 @@
+REM Creando carpetas
+mkdir c:\Empresa
+
+rem FOR /F "tokens=1-2 delims=, skip=1" %%a in (secciones.csv) do mkdir c:\empresa\%%a
+ rem FOR /F "tokens=1-2 delims=, skip=1" %%a in (departamentos.csv) do mkdir c:\empresa\%%a
+
+icacls c /inheritance:r
+icacls c:\Empresa /GRANT Administradores:(OI)(CI)F
+icacls c:\Empresa /GRANT Empresa:RX
+
+
+ rem FOR /F "tokens=1-2 delims=, skip=1" %%a in (secciones.csv) do mkdir c:\empresa\%%a
+ rem FOR /F "tokens=1-2 delims=, skip=1" %%a in (secciones.csv) do icacls c:\empresa\%%a /GRANT %%a:RX
+
+FOR /F "tokens=1 delims=; skip=1" %%a in (departamentos.csv) do mkdir c:\empresa\%%a
+FOR /F "tokens=1 delims=; skip=1" %%a in (departamentos.csv) do icacls c:\empresa\%%a /GRANT %%a:(OI)(CI)F
+
+net share Empresa /delete
+net share Empresa=c:\Empresa /grant:Administradores,FULL /grant:Empresa,CHANGE
+
+mkdir  c:\Empresa_users
+icacls c:\Empresa_users /inheritance:r
+
+icacls c:\Empresa_users /grant Administradores:(OI)(CI)F
+icacls c:\Empresa_users /grant Empresa:RX
+
+REM Creacion de carpetas de usuarios
+
+FOR /F "tokens=2,3 delims=; skip=1" %%a in (empleados.csv) do mkdir c:\Empresa_users\"%%a.%%b"
+FOR /F "tokens=2,3 delims=; skip=1" %%a in (empleados.csv) do icacls c:\Empresa_users\%%a.%%b /grant %%a.%%b:(OI)(CI)F
+
+
+net share Empresa_users /delete
+net share Empresa_users / delete
+net share Empresa_users=c:\Empresa_users /grant:Administradores,FULL /grant:Empresa,CHANGE
+
+:: Hasta aquí, está bien
+
+FOR /F "tokens=1-3 delims=; skip=1" %%a in (empleados.csv) do dsmod user "cn=%%b.%%c, ou=%%a, ou=Empresa, dc=DOMINIO013, dc=local" -hmdrv Y: -hmdir "\\192.168.16.213\Empresa_users\%%b.%%c"
+
+
+:: esto crea el script de inicio de sesion
+
+FOR /F "tokens=1-3 delims=; skip=1" %%a in (empleados.csv) do dsmod user "cn=%%b.%%c, ou=%%a, ou=Empresa, dc=dominio013, dc=local" -loscr "empresa.bat"
+
+
+
+::Esta parte sirve para acceder al recurso compartido
+
+
+
+pause
