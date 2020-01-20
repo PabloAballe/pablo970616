@@ -1,0 +1,26 @@
+Write-Output "Creando Estructura de OU y Grupos..."
+New-ADOrganizationalUnit -Name "Empresa" -Path "DC=DOMINIO013, DC=LOCAL" -Description "Unidad organizativa Empresa" -ProtectedFromAccidentalDeletion $false 
+New-ADGroup -Name "Empresa" -GroupScope Global -Path "OU=Empresa,DC=DOMINIO013,DC=LOCAL"
+$secciones = Import-CSV -Path "C:\Users\Administrador.WIN-RBPC88GMIL4\Desktop\departamentos.csv" -delimiter ";"
+$group = Get-ADGroup "CN=Empresa,OU=Empresa,DC=DOMINIO013,DC=LOCAL"
+foreach ($ou in $secciones) {
+ New-ADOrganizationalUnit -Name ($ou.departamento) -Path "OU=Empresa, DC=DOMINIO013, DC=LOCAL"
+ $path="OU="+($ou.departamento)+",OU=Empresa, DC=DOMINIO013, DC=LOCAL"
+ New-ADGroup -Name $ou.departamento -GroupScope Global -Path $path
+ $member = "CN="+($ou.departamento)+","+$path 
+ Add-ADGroupMember $group -Members $member 
+ Write-Output "Unidad $($ou.departamento) creada!"
+}
+#hasta aqui bien no lo modiques
+
+$usuarios = Import-CSV -Path "C:\Users\Administrador.WIN-RBPC88GMIL4\Desktop\empleados.csv" -delimiter ";"
+Write-Output "Creando usuarios...."
+foreach ($user in $usuarios) {
+$login= ($user.nombre)+"."+($user.apellido)
+$path="OU="+$user.departamento+",OU=Empresa,DC=DOMINIO013,DC=LOCAL"
+New-ADUser -Name $login -Path $path -SamAccountName $login -UserPrincipalName ($login+"@DOMINIO013.LOCAL") -AccountPassword (ConvertTo-SecureString "1234Abcd&!" -AsPlainText -Force) -GivenName $login -ChangePasswordAtLogon $true -Enabled $true
+$group = Get-ADGroup ("CN="+$user.departamento+",OU="+$user.departamento+",OU=Empresa,DC=DOMINIO013,DC=LOCAL")
+$member="CN="+$login+","+$path
+Add-ADGroupMember $group -Members $member 
+Write-Output "Usuario $($user.login) creado!"
+}
